@@ -134,7 +134,7 @@ export default function AdminPage() {
 
   const resetForm = () => { setName(""); setPrice(""); setOldPrice(""); setDescription(""); setRating("4.5"); setReviews("0"); setColorsList(["#C9385E", "#FFFFFF"]); setSizesInput("S, M, L"); setIsNew(true); setIsBestseller(false); setEditingId(null); setStockInput("10"); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim() || !price.trim() || !description.trim()) { setMessage("يرجى تعبئة الحقول المطلوبة"); return; }
     const colors = colorsList.filter(Boolean);
     const sizes = sizesInput.trim() ? sizesInput.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
@@ -143,10 +143,12 @@ export default function AdminPage() {
       category, description: description.trim(), rating: Number(rating), reviews: Number(reviews),
       colors, sizes, isNew, isBestseller, stock: Math.max(0, Number(stockInput) || 0), image: `/images/product-${category === "abayas" ? "abaya" : category === "perfumes" ? "perfume" : category === "bags" ? "bag" : category === "jewelry" ? "jewelry" : "dress"}.png`,
     };
-    if (editingId) { updateProduct(editingId, productData); setMessage("تم تحديث المنتج"); }
-    else { addProduct({ ...productData, id: `p-${Date.now()}` }); setMessage("تمت إضافة المنتج"); }
-    resetForm();
-    setTimeout(() => setMessage(""), 3000);
+    try {
+      if (editingId) { await updateProduct(editingId, productData); setMessage("تم تحديث المنتج"); }
+      else { await addProduct({ ...productData, id: `p-${Date.now()}` }); setMessage("تمت إضافة المنتج"); }
+      resetForm();
+      setTimeout(() => setMessage(""), 3000);
+    } catch { setMessage("حدث خطأ، حاول مرة أخرى"); }
   };
 
   const handleEdit = (p: Product) => {
@@ -157,11 +159,13 @@ export default function AdminPage() {
     setIsNew(!!p.isNew); setIsBestseller(!!p.isBestseller); setTab("products");
   };
 
-  const handleSaveShipping = () => {
+  const handleSaveShipping = async () => {
     const fee = Number(shippingFeeInput); const threshold = Number(thresholdInput);
     if (!Number.isFinite(fee) || fee < 0 || !Number.isFinite(threshold) || threshold <= 0) { setShippingMsg("يرجى إدخال أرقام صحيحة"); return; }
-    setShippingFee(fee); setFreeShippingThreshold(threshold);
-    setShippingMsg("تم حفظ إعدادات الشحن"); setTimeout(() => setShippingMsg(""), 3000);
+    try {
+      await setShippingFee(fee); await setFreeShippingThreshold(threshold);
+      setShippingMsg("تم حفظ إعدادات الشحن"); setTimeout(() => setShippingMsg(""), 3000);
+    } catch { setShippingMsg("حدث خطأ في الحفظ"); }
   };
 
   const TABS = [{ key: "products", label: "المنتجات" }, { key: "orders", label: "الطلبات" }, { key: "shipping", label: "الشحن" }, { key: "chat", label: "الدردشة" }] as const;
